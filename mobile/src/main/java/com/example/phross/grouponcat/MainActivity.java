@@ -9,6 +9,8 @@ import android.view.MenuItem;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
+import static com.example.phross.grouponcat.GrouponDeals.getDeal;
+
 
 public class MainActivity extends ActionBarActivity {
     private ProgressBar progressBar;
@@ -23,6 +25,7 @@ public class MainActivity extends ActionBarActivity {
         addContentView(progressBar, new FrameLayout.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT,
                 ActionBar.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
 //        setProgressBarIndeterminate(true);
+        getDeal("daf41a19-2d44-b30e-a5ed-dca6eab6c818", null);
     }
 
     @Override
