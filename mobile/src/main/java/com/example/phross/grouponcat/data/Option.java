@@ -6,7 +6,7 @@ import java.util.List;
  * Created by phross on 7/20/15.
  */
 public class Option {
-    public List<DealLocation> dealLocations;
+    public List<RedemptionLocation> redemptionLocations;
     public String title;
     public int discountPercent;
     public Cost value;

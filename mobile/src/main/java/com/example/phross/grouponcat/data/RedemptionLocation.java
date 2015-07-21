@@ -3,7 +3,7 @@ package com.example.phross.grouponcat.data;
 /**
  * Created by phross on 7/20/15.
  */
-public class DealLocation {
+public class RedemptionLocation {
     public String postalCode;
     public double lat;
     public double lng;

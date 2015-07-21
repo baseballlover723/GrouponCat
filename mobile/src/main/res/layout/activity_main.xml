@@ -8,10 +8,28 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity">
 
+    <TextView
+        android:id="@+id/noDealsView"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:text="I didn&apos;t find anything"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/lookingForDealsView"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:text="I&apos;m looking for deals near you"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:layout_marginBottom="75dp" />
+
     <ListView xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/ListView1"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
-    </ListView>
+        android:layout_height="match_parent"></ListView>
 
 </RelativeLayout>

@@ -1,32 +1,25 @@
 package com.example.phross.grouponcat;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.location.Location;
 import android.util.Log;
 
 import com.example.phross.grouponcat.data.Deal;
-import com.example.phross.grouponcat.data.DealLocation;
+import com.example.phross.grouponcat.data.GetDealsData;
+import com.example.phross.grouponcat.data.RedemptionLocation;
 import com.example.phross.grouponcat.data.GetDealData;
 import com.example.phross.grouponcat.data.Option;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.JsonHttpResponseHandler;
-
-import org.apache.http.Header;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by phross on 7/20/15.
@@ -168,127 +161,102 @@ public class GrouponDeals {
 //    }
 
     public static Deal getDeal(String id, Location location) {
-        Log.d(TAG, "Get deal");
         Gson gson = new Gson();
 
         Deal deal = null;
 
-//        try {
-        String url = "http://api.groupon.com/v2/deals/" + id + ".json?client_id=" + CLIENT_ID;
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.get(url, null, new JsonHttpResponseHandler() {
+        try {
+            URL url = new URL("http://api.groupon.com/v2/deals/" + id
+                    + ".json?client_id=" + CLIENT_ID);
+            BufferedReader in;
+            try {
+                in = new BufferedReader(new InputStreamReader(url.openStream()));
 
-            @Override
-            public void onStart() {
-                // called before request is started
-                Log.d(TAG, "start");
-            }
+                GetDealData data = gson.fromJson(in, GetDealData.class);
 
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                // called when response HTTP status is "200 OK"
-                Log.d(TAG, "success");
-                Log.d(TAG, response.toString());
-            }
+                deal = data.deal;
+                for (Option option : deal.options) {
+                    for (RedemptionLocation redemptionLocation : option.redemptionLocations) {
+                        Location rLocation = new Location("Groupon");
 
-            @Override
-            public void onRetry(int retryNo) {
-                Log.d(TAG, "retry");
-                // called when request is retried
+                        rLocation.setLatitude(redemptionLocation.lat);
+                        rLocation.setLongitude(redemptionLocation.lng);
+
+                        if (deal.distance == 0
+                                || location.distanceTo(rLocation) < deal.distance) {
+                            deal.address = redemptionLocation.streetAddress1;
+                            deal.distance = location.distanceTo(rLocation);
+                        }
+                    }
+                }
+
+                in.close();
+            } catch (IOException exception) {
+                // TODO Auto-generated catch-block stub.
+                exception.printStackTrace();
             }
-        });
-//            URL url = new URL("http://api.groupon.com/v2/deals/" + id
-//                    + ".json?client_id=" + CLIENT_ID);
-//            BufferedReader in;
-//            try {
-//                in = new BufferedReader(new InputStreamReader(url.openStream()));
-//
-//                GetDealData data = gson.fromJson(in, GetDealData.class);
-//
-//                deal = data.deal;
-//
-//                for (Option option : deal.options) {
-//                    for (DealLocation dealLocation : option.dealLocations) {
-//                        Location rLocation = new Location("Groupon");
-//
-//                        rLocation.setLatitude(dealLocation.lat);
-//                        rLocation.setLongitude(dealLocation.lng);
-//                        Log.d(TAG, deal.toString());
-//                        if (deal.distance == 0
-//                                || location.distanceTo(rLocation) < deal.distance) {
-//                            deal.address = dealLocation.streetAddress1;
-//                            deal.distance = location.distanceTo(rLocation);
-//                        }
-//                    }
-//                }
-//
-//                in.close();
-//            } catch (IOException exception) {
-////                 TODO Auto-generated catch-block stub.
-//                exception.printStackTrace();
-//            }
-//        } catch (MalformedURLException exception) {
-////             TODO Auto-generated catch-block stub.
-//            exception.printStackTrace();
-//        }
+        } catch (MalformedURLException exception) {
+            // TODO Auto-generated catch-block stub.
+            exception.printStackTrace();
+        }
 
         return deal;
     }
 
-//    public static List<Deal> getDeals(Location location, int radius) {
-//        List<Deal> nearby = new ArrayList<Deal>();
-//
-//        Gson gson = new Gson();
-//
-//        try {
-//            URL url = new URL("http://api.groupon.com/v2/deals.json?client_id="
-//                    + CLIENT_ID + "&lat=" + location.getLatitude() + "&lng="
-//                    + location.getLongitude());
-//            BufferedReader in;
-//            try {
-//                in = new BufferedReader(new InputStreamReader(url.openStream()));
-//
-//                getDealsData data = gson.fromJson(in, getDealsData.class);
-//
-//                for (Deal deal : data.deals) {
-//                    boolean isNear = false;
-//
-//                    for (Option option : deal.options) {
-//                        for (RedemptionLocation redemptionLocation : option.redemptionLocations) {
-//                            Location rLocation = new Location("Groupon");
-//
-//                            rLocation.setLatitude(redemptionLocation.lat);
-//                            rLocation.setLongitude(redemptionLocation.lng);
-//
-//                            if (location.distanceTo(rLocation) < radius
-//                                    && !deal.isSoldOut) {
-//                                isNear = true;
-//
-//                                deal.address = redemptionLocation.streetAddress1;
-//                                deal.distance = location.distanceTo(rLocation);
-//
-//                                break;
-//                            }
-//                        }
-//
-//                        if (isNear)
-//                            break;
-//                    }
-//
-//                    if (isNear)
-//                        nearby.add(deal);
-//                }
-//
-//                in.close();
-//            } catch (IOException exception) {
-//                 //TODO Auto-generated catch-block stub.
-//                exception.printStackTrace();
-//            }
-//        } catch (MalformedURLException exception) {
-//             //TODO Auto-generated catch-block stub.
-//            exception.printStackTrace();
-//        }
-//
-//        return nearby;
-//    }
+    public static List<Deal> getDeals(Location location, int radius) {
+        List<Deal> nearby = new ArrayList<Deal>();
+        Gson gson = new Gson();
+        try {
+            URL url = new URL("http://api.groupon.com/v2/deals.json?client_id="
+                    + CLIENT_ID + "&lat=" + location.getLatitude() + "&lng="
+                    + location.getLongitude());
+            BufferedReader in;
+            try {
+                in = new BufferedReader(new InputStreamReader(url.openStream()));
+
+                GetDealsData data = gson.fromJson(in, GetDealsData.class);
+
+                for (Deal deal : data.deals) {
+                    if (deal.isSoldOut) {
+                        continue;
+                    }
+                    if (processDeal(deal, location, radius)) {
+                        nearby.add(deal);
+                    }
+                }
+
+                in.close();
+            } catch (IOException exception) {
+                //TODO Auto-generated catch-block stub.
+                exception.printStackTrace();
+            }
+        } catch (MalformedURLException exception) {
+            //TODO Auto-generated catch-block stub.
+            exception.printStackTrace();
+        }
+
+        return nearby;
+    }
+
+    private static boolean processDeal(Deal deal, Location location, int radius) {
+        boolean isNear = false;
+        for (Option option : deal.options) {
+            for (RedemptionLocation redemptionLocation : option.redemptionLocations) {
+                Location rLocation = new Location("Groupon");
+
+                rLocation.setLatitude(redemptionLocation.lat);
+                rLocation.setLongitude(redemptionLocation.lng);
+
+                if (location.distanceTo(rLocation) < radius) {
+                    isNear = true;
+                    if (deal.distance == 0
+                            || location.distanceTo(rLocation) < deal.distance) {
+                        deal.address = redemptionLocation.streetAddress1;
+                        deal.distance = location.distanceTo(rLocation);
+                    }
+                }
+            }
+        }
+        return isNear;
+    }
 }
