@@ -1,12 +1,16 @@
 package com.example.phross.grouponcat;
 
 import android.app.ActionBar;
+import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -19,6 +23,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.phross.grouponcat.data.Deal;
+import com.example.phross.grouponcat.data.SettingValues;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,8 +31,11 @@ import java.util.Comparator;
 import java.util.List;
 
 
-public class MainActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener, LocationListener {
     private static final String TAG = "Main Activity";
+
+    private LocationManager locationManager;
+
     private ProgressBar progressBar;
     private DealAdapter dealAdapter;
     private ListView listView;
@@ -37,25 +45,20 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000* SettingValues.refreshRate, 35, this);
 
         progressBar = new ProgressBar(this);
-        addContentView(progressBar, new FrameLayout.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT,
-                ActionBar.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+
+        setMainScreen();
 
         dealAdapter = new DealAdapter(this);
 
-        listView = (ListView) findViewById(R.id.ListView1);
-        noDealsFoundView = (TextView) findViewById(R.id.noDealsView);
-        lookingForDealsView = (TextView) findViewById(R.id.lookingForDealsView);
-
-        noDealsFoundView.setVisibility(TextView.INVISIBLE);
-        lookingForDealsView.setVisibility(TextView.INVISIBLE);
-        listView.setVisibility(ListView.INVISIBLE);
         listView.setAdapter(dealAdapter);
         listView.setOnItemClickListener(this);
 
-        test();
+//        test();
 
     }
 
@@ -89,23 +92,14 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         startActivity(intent);
     }
 
-    public void test() {
-//        final Location location = locationClient.getLastLocation();
-        final Location location = new Location("us");
-        location.setLatitude(41.897607);
-        location.setLongitude(-87.624062);
-        final String[] ids = {"ba984176-47db-fd4b-693a-5b7a507676a0",
-                "daf41a19-2d44-b30e-a5ed-dca6eab6c818"};
+    @Override
+    public void onLocationChanged(final Location location) {
 
         AsyncTask<Void, Void, List<Deal>> getDeals = new AsyncTask<Void, Void, List<Deal>>() {
-
             @Override
             protected void onPreExecute() {
                 Log.d(TAG, "in pre execute");
-                progressBar.setVisibility(ProgressBar.VISIBLE);
-                listView.setVisibility(ListView.INVISIBLE);
-                noDealsFoundView.setVisibility(TextView.INVISIBLE);
-                lookingForDealsView.setVisibility(TextView.VISIBLE);
+                setLoading();
             }
 
             @Override
@@ -117,7 +111,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
 //                    e.printStackTrace();
 //                }
 
-                deals = GrouponDeals.getDeals(location, 5000);
+                deals = GrouponDeals.getDeals(location);
 //                for (String id : ids) {
 //                    deals.add(GrouponDeals.getDeal(id, location));
 //                }
@@ -134,14 +128,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                         return (int) (lhs.distance - rhs.distance);
                     }
                 });
-                progressBar.setVisibility(ProgressBar.INVISIBLE);
-                lookingForDealsView.setVisibility(TextView.INVISIBLE);
-//                progressBar.setVisibility(View.GONE);
-                if (result.size() != 0) {
-                    listView.setVisibility(ListView.VISIBLE);
-                } else {
-                    noDealsFoundView.setVisibility(TextView.VISIBLE);
-                }
+                setAfterQuery(result.size() != 0);
                 dealAdapter.setData(result);
             }
         };
@@ -149,40 +136,68 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         getDeals.execute();
         Log.d(TAG, "done");
     }
-//    private void getDeal(String id, Location location) {
-//        Log.d(TAG, "Get deal");
-//
-//        Deal deal = null;
-//
-////        try {
-//        String url = "http://api.groupon.com/v2/deals/" + id + ".json?client_id=" + CLIENT_ID;
-//        AsyncHttpClient client = new AsyncHttpClient();
-//        final RequestParams params = new RequestParams();
-//        params.put("location", location);
-//        client.get(url, params, new JsonHttpResponseHandler() {
-//
-//            @Override
-//            public void onStart() {
-//                // called before request is started
-//                Log.d(TAG, "start");
-//            }
-//
-//            @Override
-//            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-//                // called when response HTTP status is "200 OK"
-//                Log.d(TAG, "success");
-//                Log.d(TAG, response.toString());
-//                ArrayList<Deal> list = new ArrayList<Deal>();
-//
-//                list.add(doSomethingWithDeal(response, ));
-////                setData(list);
-//            }
-//
-//            @Override
-//            public void onRetry(int retryNo) {
-//                Log.d(TAG, "retry");
-//                // called when request is retried
-//            }
-//        });
-//    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+        Log.d(TAG, "status changed");
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+        Log.d(TAG, "provider enabled");
+        setMainScreen();
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+        Log.d(TAG, "provider disabled");
+        setNoGPSScreen();
+    }
+
+    public void test() {
+//        final Location location = locationClient.getLastLocation();
+        final Location location = new Location("us");
+        location.setLatitude(41.897607);
+        location.setLongitude(-87.624062);
+        final String[] ids = {"ba984176-47db-fd4b-693a-5b7a507676a0",
+                "daf41a19-2d44-b30e-a5ed-dca6eab6c818"};
+
+    }
+
+
+    public void setMainScreen() {
+        setContentView(R.layout.activity_main);
+        addContentView(progressBar, new FrameLayout.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT,
+                ActionBar.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+
+        listView = (ListView) findViewById(R.id.ListView1);
+        noDealsFoundView = (TextView) findViewById(R.id.noDealsView);
+        lookingForDealsView = (TextView) findViewById(R.id.lookingForDealsView);
+
+        noDealsFoundView.setVisibility(TextView.INVISIBLE);
+        lookingForDealsView.setVisibility(TextView.INVISIBLE);
+        listView.setVisibility(ListView.INVISIBLE);
+    }
+
+    public void setNoGPSScreen() {
+        setContentView(R.layout.gps_off);
+    }
+
+    public void setLoading() {
+        progressBar.setVisibility(ProgressBar.VISIBLE);
+        listView.setVisibility(ListView.INVISIBLE);
+        noDealsFoundView.setVisibility(TextView.INVISIBLE);
+        lookingForDealsView.setVisibility(TextView.VISIBLE);
+    }
+
+    public void setAfterQuery(boolean foundDeals) {
+        progressBar.setVisibility(ProgressBar.INVISIBLE);
+        lookingForDealsView.setVisibility(TextView.INVISIBLE);
+        if (foundDeals) {
+            listView.setVisibility(ListView.VISIBLE);
+        } else {
+            noDealsFoundView.setVisibility(TextView.VISIBLE);
+        }
+    }
 }

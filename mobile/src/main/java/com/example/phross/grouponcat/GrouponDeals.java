@@ -9,6 +9,7 @@ import com.example.phross.grouponcat.data.GetDealsData;
 import com.example.phross.grouponcat.data.RedemptionLocation;
 import com.example.phross.grouponcat.data.GetDealData;
 import com.example.phross.grouponcat.data.Option;
+import com.example.phross.grouponcat.data.SettingValues;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
@@ -203,7 +204,7 @@ public class GrouponDeals {
         return deal;
     }
 
-    public static List<Deal> getDeals(Location location, int radius) {
+    public static List<Deal> getDeals(Location location) {
         List<Deal> nearby = new ArrayList<Deal>();
         Gson gson = new Gson();
         try {
@@ -220,7 +221,7 @@ public class GrouponDeals {
                     if (deal.isSoldOut) {
                         continue;
                     }
-                    if (processDeal(deal, location, radius)) {
+                    if (processDeal(deal, location)) {
                         nearby.add(deal);
                     }
                 }
@@ -238,7 +239,7 @@ public class GrouponDeals {
         return nearby;
     }
 
-    private static boolean processDeal(Deal deal, Location location, int radius) {
+    private static boolean processDeal(Deal deal, Location location) {
         boolean isNear = false;
         for (Option option : deal.options) {
             for (RedemptionLocation redemptionLocation : option.redemptionLocations) {
@@ -247,7 +248,7 @@ public class GrouponDeals {
                 rLocation.setLatitude(redemptionLocation.lat);
                 rLocation.setLongitude(redemptionLocation.lng);
 
-                if (location.distanceTo(rLocation) < radius) {
+                if (location.distanceTo(rLocation) < SettingValues.searchRadius) {
                     isNear = true;
                     if (deal.distance == 0
                             || location.distanceTo(rLocation) < deal.distance) {
